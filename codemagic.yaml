@@ -21,9 +21,11 @@ workflows:
           pod install
       - name: Xcode build
         script: |
-          # Check if custom code signing parameters or profile plists are configured
-          if [ -d "$HOME/library/MobileDevice/Provisioning Profiles" ] || [ -f "$HOME/export_options.plist" ] || [ -f "/Users/builder/export_options.plist" ]; then
-            echo "--- Code signing configurations detected, running Signed production build ---"
+          # Count installed provisioning profiles in the local build machine
+          PROFILES_COUNT=$(find "$HOME/Library/MobileDevice/Provisioning Profiles" -type f \( -name "*.mobileprovision" -o -name "*.provisionprofile" \) 2>/dev/null | wc -l)
+          
+          if [ "$PROFILES_COUNT" -gt 0 ] && [ -f "$HOME/export_options.plist" ]; then
+            echo "--- Active Provisioning Profiles found ($PROFILES_COUNT). Running SIGNED production build ---"
             
             # Setup Keychain and parse provisioning profiles matching the target
             keychain initialize
@@ -34,7 +36,19 @@ workflows:
               --workspace "$XCODE_WORKSPACE" \
               --scheme "$XCODE_SCHEME"
           else
-            echo "--- No local code signing found. Performing validation compile and Unsigned .ipa packaging ---"
+            echo "--- No active code signing found ($PROFILES_COUNT profiles). Running UNSIGNED build ---"
+            echo "--- Optimizing Entitlements for unsigned compilation target ---"
+            
+            # Create a simplified clean entitlements file (stripping push notifications & associated domains)
+            # which avoids compiling errors due to missing profile capabilities
+            cat <<EOF > pwa-shell/Entitlements/Entitlements.plist
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+</dict>
+</plist>
+EOF
             
             # Compile releasing unsigned .xcarchive cleanly bypassing security gates
             xcodebuild \
