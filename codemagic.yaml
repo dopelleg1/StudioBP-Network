@@ -1,0 +1,32 @@
+# Codemagic CI/CD Build Configuration for StudioBP Network iOS App
+# This YAML automates the compilation and packaging of your Progressive Web App into an iOS .ipa package.
+
+workflows:
+  ios-swift-pwa-builder:
+    name: Build StudioBP Network iOS App
+    max_build_duration: 120
+    instance_type: mac_mini_co
+    environment:
+      vars:
+        XCODE_WORKSPACE: "pwa-shell.xcworkspace"
+        XCODE_SCHEME: "pwa-shell"
+      xcode: latest
+      cocoapods: default
+    triggering:
+      events:
+        - push
+    scripts:
+      - name: CocoaPods installation
+        script: |
+          pod install
+      - name: Xcode build
+        script: |
+          xcode-project build-ipa \
+            --workspace "$XCODE_WORKSPACE" \
+            --scheme "$XCODE_SCHEME"
+    artifacts:
+      - build/ios/ipa/*.ipa
+    publishing:
+      email:
+        recipients:
+          - domenico@studiotronic.it
