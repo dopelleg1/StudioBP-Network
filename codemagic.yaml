@@ -21,9 +21,41 @@ workflows:
           pod install
       - name: Xcode build
         script: |
-          xcode-project build-ipa \
-            --workspace "$XCODE_WORKSPACE" \
-            --scheme "$XCODE_SCHEME"
+          # Check if custom code signing parameters or profile plists are configured
+          if [ -d "$HOME/library/MobileDevice/Provisioning Profiles" ] || [ -f "$HOME/export_options.plist" ] || [ -f "/Users/builder/export_options.plist" ]; then
+            echo "--- Code signing configurations detected, running Signed production build ---"
+            
+            # Setup Keychain and parse provisioning profiles matching the target
+            keychain initialize
+            xcode-project use-profiles
+            
+            # Compile and export using Codemagic's built-in signed builder
+            xcode-project build-ipa \
+              --workspace "$XCODE_WORKSPACE" \
+              --scheme "$XCODE_SCHEME"
+          else
+            echo "--- No local code signing found. Performing validation compile and Unsigned .ipa packaging ---"
+            
+            # Compile releasing unsigned .xcarchive cleanly bypassing security gates
+            xcodebuild \
+              -workspace "$XCODE_WORKSPACE" \
+              -scheme "$XCODE_SCHEME" \
+              -configuration Release \
+              -archivePath build/ios/xcarchive/pwa-shell.xcarchive \
+              archive \
+              CODE_SIGNING_ALLOWED=NO \
+              CODE_SIGNING_REQUIRED=NO \
+              CODE_SIGN_IDENTITY="" \
+              COMPILER_INDEX_STORE_ENABLE=NO
+
+            # Repackage the compiled binary .app into a transportable unsigned .ipa using the standard Payload format
+            echo "--- Packaging compiled files into transportable payload .ipa package ---"
+            mkdir -p build/ios/ipa/Payload
+            cp -r build/ios/xcarchive/pwa-shell.xcarchive/Products/Applications/pwa-shell.app build/ios/ipa/Payload/
+            cd build/ios/ipa
+            zip -r pwa-shell.ipa Payload
+            cd ../../..
+          fi
     artifacts:
       - build/ios/ipa/*.ipa
     publishing:
