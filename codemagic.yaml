@@ -21,6 +21,8 @@ workflows:
           pod install
       - name: Xcode build
         script: |
+          set -e
+          
           # Count installed provisioning profiles in the local build machine
           PROFILES_COUNT=$(find "$HOME/Library/MobileDevice/Provisioning Profiles" -type f \( -name "*.mobileprovision" -o -name "*.provisionprofile" \) 2>/dev/null | wc -l)
           
@@ -39,17 +41,8 @@ workflows:
             echo "--- No active code signing found ($PROFILES_COUNT profiles). Running UNSIGNED build ---"
             echo "--- Optimizing Entitlements for unsigned compilation target ---"
             
-            # Create a simplified clean entitlements file (stripping push notifications & associated domains)
-            # which avoids compiling errors due to missing profile capabilities.
-            # We indent with 10 spaces to ensure it remains inside the YAML block scalar.
-            cat << 'EOF' > pwa-shell/Entitlements/Entitlements.plist
-          <?xml version="1.0" encoding="UTF-8"?>
-          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-          <plist version="1.0">
-          <dict>
-          </dict>
-          </plist>
-          EOF
+            # Simplify entitlements file in a single line to avoid YAML indentation/heredoc parsing issues
+            echo '<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd"><plist version="1.0"><dict></dict></plist>' > pwa-shell/Entitlements/Entitlements.plist
             
             # Compile releasing unsigned .xcarchive cleanly bypassing security gates
             xcodebuild \
