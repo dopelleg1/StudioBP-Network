@@ -6,8 +6,8 @@
 	<string>production</string>
 	<key>com.apple.developer.associated-domains</key>
 	<array>
-		<string>{{PWABuilder.iOS.universalLinksHost}}</string>
-		<string>{{PWABuilder.iOS.sharedCredentialsHost}}</string>
+		<string>applinks:ais-pre-ikru6x2p2pe3myocx5zpi3-387847488873.europe-west2.run.app</string>
+		<string>webcredentials:ais-pre-ikru6x2p2pe3myocx5zpi3-387847488873.europe-west2.run.app</string>
 	</array>
 	<key>com.apple.security.app-sandbox</key>
 	<true/>
