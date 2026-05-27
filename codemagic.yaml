@@ -18,7 +18,34 @@ workflows:
     scripts:
       - name: CocoaPods installation
         script: |
-          pod install
+          # Optimize Git settings to prevent 502 / RPC failed errors on large pod clones (Firebase is large)
+          git config --global http.postBuffer 1048576000
+          git config --global http.version HTTP/1.1
+          git config --global core.compression 0
+          
+          # Retry mechanism for pod install (up to 3 times) with automatic cache cleanup on failure
+          MAX_ATTEMPTS=3
+          ATTEMPT=1
+          SUCCESS=false
+          
+          while [ $ATTEMPT -le $MAX_ATTEMPTS ]; do
+            echo "--- Pod install attempt $ATTEMPT of $MAX_ATTEMPTS ---"
+            if pod install; then
+              echo "--- Pod install succeeded! ---"
+              SUCCESS=true
+              break
+            else
+              echo "--- Pod install failed on attempt $ATTEMPT. Cleaning CocoaPods cache and retrying in 10 seconds... ---"
+              pod cache clean --all
+              ATTEMPT=$((ATTEMPT + 1))
+              sleep 10
+            fi
+          done
+          
+          if [ "$SUCCESS" = false ]; then
+            echo "--- Error: CocoaPods installation failed after $MAX_ATTEMPTS attempts ---"
+            exit 1
+          fi
       - name: Xcode build
         script: |
           set -e
@@ -87,7 +114,34 @@ workflows:
     scripts:
       - name: CocoaPods installation
         script: |
-          pod install
+          # Optimize Git settings to prevent 502 / RPC failed errors on large pod clones (Firebase is large)
+          git config --global http.postBuffer 1048576000
+          git config --global http.version HTTP/1.1
+          git config --global core.compression 0
+          
+          # Retry mechanism for pod install (up to 3 times) with automatic cache cleanup on failure
+          MAX_ATTEMPTS=3
+          ATTEMPT=1
+          SUCCESS=false
+          
+          while [ $ATTEMPT -le $MAX_ATTEMPTS ]; do
+            echo "--- Pod install attempt $ATTEMPT of $MAX_ATTEMPTS ---"
+            if pod install; then
+              echo "--- Pod install succeeded! ---"
+              SUCCESS=true
+              break
+            else
+              echo "--- Pod install failed on attempt $ATTEMPT. Cleaning CocoaPods cache and retrying in 10 seconds... ---"
+              pod cache clean --all
+              ATTEMPT=$((ATTEMPT + 1))
+              sleep 10
+            fi
+          done
+          
+          if [ "$SUCCESS" = false ]; then
+            echo "--- Error: CocoaPods installation failed after $MAX_ATTEMPTS attempts ---"
+            exit 1
+          fi
       - name: Xcode build for Simulator
         script: |
           set -e
