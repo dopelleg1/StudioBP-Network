@@ -1,9 +1,9 @@
 # Codemagic CI/CD Build Configuration for StudioBP Network iOS App
-# This YAML automates the compilation and packaging of your Progressive Web App into an iOS .ipa package.
+# This YAML contains dual workflows: one for real device IPA delivery and one for simulator virtual testing (Appetize.io).
 
 workflows:
   ios-swift-pwa-builder:
-    name: Build StudioBP Network iOS App
+    name: Build StudioBP Network iOS App (Device IPA)
     max_build_duration: 120
     instance_type: mac_mini_m1
     environment:
@@ -66,6 +66,57 @@ workflows:
           fi
     artifacts:
       - build/ios/ipa/*.ipa
+    publishing:
+      email:
+        recipients:
+          - domenico@studiotronic.it
+
+  ios-simulator-builder:
+    name: Build StudioBP Network iOS Simulator (for Appetize.io)
+    max_build_duration: 120
+    instance_type: mac_mini_m1
+    environment:
+      vars:
+        XCODE_WORKSPACE: "pwa-shell.xcworkspace"
+        XCODE_SCHEME: "pwa-shell"
+      xcode: latest
+      cocoapods: default
+    triggering:
+      events:
+        - push
+    scripts:
+      - name: CocoaPods installation
+        script: |
+          pod install
+      - name: Xcode build for Simulator
+        script: |
+          set -e
+          echo "--- Building for iOS Simulator (x86_64 / arm64 architecture) ---"
+          
+          # Simplify entitlements file to prevent capabilities error blocks during unsigned compilation
+          echo '<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd"><plist version="1.0"><dict></dict></plist>' > pwa-shell/Entitlements/Entitlements.plist
+          
+          # Compile targeted specifically at the iOS Simulator SDK
+          xcodebuild \
+            -workspace "$XCODE_WORKSPACE" \
+            -scheme "$XCODE_SCHEME" \
+            -sdk iphonesimulator \
+            -configuration Release \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            COMPILER_INDEX_STORE_ENABLE=NO
+
+          # Package the compiled .app bundle into a .zip file at the root level as requested by Appetize
+          echo "--- Packaging compiled .app bundle into a .zip archive for simulator testing ---"
+          mkdir -p build/ios/simulator
+          cp -r build/Build/Products/Release-iphonesimulator/*.app build/ios/simulator/
+          cd build/ios/simulator
+          zip -r pwa-shell-simulator.zip *.app
+          cd ../../..
+    artifacts:
+      - build/ios/simulator/*.zip
     publishing:
       email:
         recipients:
