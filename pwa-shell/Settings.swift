@@ -8,11 +8,11 @@ struct Cookie {
 let gcmMessageIDKey = "00000000000" // update this with actual ID if using Firebase 
 
 // URL for first launch
-let rootUrl = URL(string: "https://ais-pre-ikru6x2p2pe3myocx5zpi3-387847488873.europe-west2.run.app")!
+let rootUrl = URL(string: "https://mytips.studiobpitalia.it")!
 
 // allowed origin is for what we are sticking to pwa domain
 // This should also appear in Info.plist
-let allowedOrigins: [String] = ["ais-pre-ikru6x2p2pe3myocx5zpi3-387847488873.europe-west2.run.app"]
+let allowedOrigins: [String] = ["mytips.studiobpitalia.it"]
 
 // auth origins will open in modal and show toolbar for back into the main origin.
 // These should also appear in Info.plist
