@@ -6,8 +6,8 @@
 	<string>production</string>
 	<key>com.apple.developer.associated-domains</key>
 	<array>
-		<string>applinks:ais-pre-ikru6x2p2pe3myocx5zpi3-387847488873.europe-west2.run.app</string>
-		<string>webcredentials:ais-pre-ikru6x2p2pe3myocx5zpi3-387847488873.europe-west2.run.app</string>
+		<string>applinks:mytips.studiobpitalia.it</string>
+		<string>webcredentials:mytips.studiobpitalia.it</string>
 	</array>
 	<key>com.apple.security.app-sandbox</key>
 	<true/>
